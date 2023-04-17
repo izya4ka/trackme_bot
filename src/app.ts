@@ -12,13 +12,15 @@ app.use(cors())
 
 const db_url = "127.0.0.1:27017";
 const db_name = "trackme_db";
+const db_user = ""
+const db_password = ""
 
 const web_app_url = "https://google.com/";
 
 const token = "";
 const bot = new TelegramBot(token, { polling: true });
 
-const db_client = new MongoClient(`mongodb://${db_url}/`);
+const db_client = new MongoClient(`mongodb://${db_user}:${db_password}@${db_url}/${db_name}`);
 
 db_client.connect().then((db_con) => {
   console.log("[Bot and MongoDB] Started!");
