@@ -3,6 +3,8 @@ import TelegramBot from "node-telegram-bot-api";
 import { addUser } from "./database/addUser";
 import express from "express";
 import cors from "cors";
+require('dotenv').config();
+
 
 const port = "55353";
 const app = express();
@@ -10,21 +12,22 @@ const app = express();
 app.use(express.json())
 app.use(cors())
 
-const db_url = "127.0.0.1:27017";
-const db_name = "trackme_db";
-const db_user = ""
-const db_password = ""
+const db_url = process.env.MONGODB_URL;
+const db_name = process.env.MONGODB_DATABASE;
+const db_user = process.env.MONGODB_USER
+const db_password = process.env.MONGODB_PASSWORD
 
-const web_app_url = "https://google.com/";
+const web_app_url = process.env.WEB_APP_URL || ""
 
-const token = "";
+const token = process.env.TELEGRAM_TOKEN || ""
+
 const bot = new TelegramBot(token, { polling: true });
 
 const db_client = new MongoClient(`mongodb://${db_user}:${db_password}@${db_url}/${db_name}`);
 
 db_client.connect().then((db_con) => {
   console.log("[Bot and MongoDB] Started!");
-  bot.onText(/\/start/, async (msg) => {
+  bot.onText(/\/start/m, async (msg) => {
     const chat_id = msg.chat.id;
     const user_id = msg.from?.id;
 
