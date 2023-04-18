@@ -1,5 +1,5 @@
 export interface apiResponse {
-    status: string
-    message?: string
-    data: {}
+  status: string;
+  message?: string;
+  data: {};
 }

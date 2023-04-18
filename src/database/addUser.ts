@@ -8,6 +8,6 @@ export const addUser = async (client: MongoClient, id: number) => {
   const user_found = await users.findOne<User>({ id });
   if (user_found !== null) throw new Error("User already in database");
 
-  const user: User = { id: id, key: randomUUID(), added: Date.now() };
+  const user: User = { id, key: randomUUID(), added: new Date() };
   await users.insertOne(user);
 };

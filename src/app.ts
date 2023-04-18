@@ -4,6 +4,7 @@ import { addUser } from "./database/addUser";
 import express from "express";
 import cors from "cors";
 import checkTracks from "./util/checkTracks";
+import { addTracks } from "./database/addTracks";
 require("dotenv").config();
 
 const port = "55353";
@@ -65,11 +66,26 @@ db_client.connect().then((db_con) => {
 
     if (user_id === undefined || match === null) return 1;
 
-    const checked_tracks = await checkTracks(match.input.split("\n"), track_regex)
+    const checked_tracks = await checkTracks(
+      match.input.split("\n"),
+      track_regex,
+      user_id,
+      db_con
+    );
 
-    const message = [...checked_tracks.valid.map(track => `[+] Трек ${track} принят`), ...checked_tracks.invalid.map(track => `[-] Трек ${track} неккоректен`)].join("\n")
-    await bot.sendMessage(chat_id, message, send_opts)
+    addTracks(checked_tracks.valid, user_id, db_con).then(() =>
+      console.log(`Added ${checked_tracks.valid.length} for user ${user_id}`)
+    );
 
+    const message = [
+      ...checked_tracks.valid.map((track) => `[+] Трек ${track} принят`),
+      ...checked_tracks.invalid.map((track) => `[-] Трек ${track} неккоректен`),
+      ...checked_tracks.already_exist.map(
+        (track) => `[!] Трек ${track} уже добавлен`
+      ),
+    ].join("\n");
+
+    await bot.sendMessage(chat_id, message, send_opts);
   });
 
   app.listen(port, () => console.log("[Express] Started!"));

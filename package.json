@@ -5,9 +5,10 @@
   "main": "src/app.ts",
   "scripts": {
     "serve-dev": "npx nodemon src/app.ts",
-    "serve": "npx ts-node src/app.ts"
+    "serve": "npx ts-node src/app.ts",
+    "build": "npx tsc --build"
   },
-  "author": "",
+  "author": "Andreev Bogdan",
   "license": "GPL-3.0-or-later",
   "dependencies": {
     "@types/cors": "^2.8.13",
