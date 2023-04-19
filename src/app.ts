@@ -12,10 +12,12 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-const db_url = process.env.MONGODB_URL;
-const db_name = process.env.MONGODB_DATABASE;
-const db_user = process.env.MONGODB_USER;
-const db_password = process.env.MONGODB_PASSWORD;
+const db = {
+  url: process.env.MONGODB_URL,
+  name: process.env.MONGODB_DATABASE,
+  user: process.env.MONGODB_USER,
+  password: process.env.MONGODB_PASSWORD, 
+}
 
 const web_app_url = process.env.WEB_APP_URL || "";
 
@@ -33,7 +35,7 @@ const send_opts = {
 };
 
 const db_client = new MongoClient(
-  `mongodb://${db_user}:${db_password}@${db_url}/${db_name}`
+  `mongodb://${db.user}:${db.password}@${db.url}/${db.name}`
 );
 
 db_client.connect().then((db_con) => {
@@ -51,7 +53,7 @@ db_client.connect().then((db_con) => {
     if (user_id === undefined) return 1;
 
     try {
-      await addUser(db_con, user_id);
+      await addUser(db_con, user_id, chat_id);
       console.log("Added user with ID: " + user_id);
     } catch (err) {
       console.log(err);

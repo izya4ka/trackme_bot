@@ -5,4 +5,5 @@ export interface User {
   tracks?: Track[];
   key: string;
   added: Date;
+  chat_id: number;
 }

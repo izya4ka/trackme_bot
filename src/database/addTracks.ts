@@ -1,6 +1,7 @@
 import { MongoClient } from "mongodb";
 import { getTracks } from "./getTracks";
 import { Track } from "../models/Track";
+import { receiveTrackFromApi } from "../api/receiveTrackFromApi";
 
 export const addTracks = async (
   tracks: string[],
@@ -9,12 +10,13 @@ export const addTracks = async (
 ) => {
   const existed_raw_tracks = await getTracks(id, client);
 
-  const tracks_to_add: Track[] = tracks.map((track) => {
+  const tracks_to_add: Track[] = await Promise.all(tracks.map(async (track) => {
     return {
       value: track,
       added: new Date(),
+      state: (await receiveTrackFromApi(track)).data.lastPoint
     };
-  });
+  }));
 
   const users = client.db().collection("users");
   await users.updateOne(
