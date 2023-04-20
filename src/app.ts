@@ -5,6 +5,8 @@ import express from "express";
 import cors from "cors";
 import checkTracks from "./util/checkTracks";
 import { addTracks } from "./database/addTracks";
+import { refreshTrackState } from "./database/refreshTrackState";
+import { User } from "./models/User";
 require("dotenv").config();
 
 const port = "55353";
@@ -12,12 +14,14 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
+const track_refresh_interval = process.env.TRACK_REFRESH_INTERVAL
+
 const db = {
   url: process.env.MONGODB_URL,
   name: process.env.MONGODB_DATABASE,
   user: process.env.MONGODB_USER,
-  password: process.env.MONGODB_PASSWORD, 
-}
+  password: process.env.MONGODB_PASSWORD,
+};
 
 const web_app_url = process.env.WEB_APP_URL || "";
 
@@ -91,4 +95,23 @@ db_client.connect().then((db_con) => {
   });
 
   app.listen(port, () => console.log("[Express] Started!"));
+
+  setInterval(() => {
+    db_con
+      .db()
+      .collection<User>("users")
+      .find({})
+      .forEach((user) => {
+        refreshTrackState(db_con, user.id).then((refreshed_tracks) => {
+          const message = refreshed_tracks.map((track) => {
+            const data = `
+            [Место] ${track.state.operationPlaceName}\n
+            [Время] ${track.state.operationDateTime}\n
+            [Операция] ${track.state.operationAttribute}\n
+          `;
+          });
+          bot.sendMessage(user.id, message.join("\n"), send_opts)
+        });
+      });
+  }, parseInt(track_refresh_interval || "7200000"));
 });

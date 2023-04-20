@@ -10,6 +10,7 @@ interface Data {
 }
 
 export interface Event {
+  id: string
   operationDateTime: string
   operationPlaceName: string
   operationAttribute: string
