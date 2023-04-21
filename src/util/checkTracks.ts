@@ -18,7 +18,6 @@ const checkTracks = async (
     invalid: [],
     already_exist: [],
   };
-
   const existed_tracks = (await getTracks(id, client)).map(
     (track) => track.value
   );

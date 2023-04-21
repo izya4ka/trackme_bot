@@ -71,8 +71,8 @@ db_client.connect().then((db_con) => {
     const user_id = msg.from?.id;
 
     if (user_id === undefined || match === null) return 1;
-
-    const checked_tracks = await checkTracks(
+    try {
+      const checked_tracks = await checkTracks(
       match.input.split("\n"),
       track_regex,
       user_id,
@@ -92,6 +92,9 @@ db_client.connect().then((db_con) => {
     ].join("\n");
 
     await bot.sendMessage(chat_id, message, send_opts);
+  } catch (err) {
+    
+  }
   });
 
   app.listen(port, () => console.log("[Express] Started!"));
