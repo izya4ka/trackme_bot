@@ -103,15 +103,17 @@ db_client.connect().then((db_con) => {
       .find({})
       .forEach((user) => {
         refreshTrackState(db_con, user.id).then((refreshed_tracks) => {
+          if (refreshed_tracks.length === 0) return 
           const message = refreshed_tracks.map((track) => {
-            const data = `
-            [Место] ${track.state.operationPlaceName}\n
-            [Время] ${track.state.operationDateTime}\n
-            [Операция] ${track.state.operationAttribute}\n
-          `;
-          });
-          bot.sendMessage(user.id, message.join("\n"), send_opts)
+            return `
+              [Трек] ${track.value}
+              [Место] ${track.state.operationPlaceName}\n
+              [Время] ${track.state.operationDateTime}\n
+              [Операция] ${track.state.operationAttribute}\n
+            `
+            });
+            bot.sendMessage(user.chat_id, message.join("\n"), send_opts)
         });
       });
-  }, parseInt(track_refresh_interval || "7200000"));
+  }, parseInt(track_refresh_interval || "10000"));
 });
