@@ -7,5 +7,6 @@ export const createMessageFromTrack = (track: Track) => {
         `[Время] ${track.state.operationDateTime}`,
         `[Операция] ${track.state.operationAttribute}`
     ]
+    if (track.name) message.unshift(`[Название] ${track.name}`)
     return message.join("\n")
 }
