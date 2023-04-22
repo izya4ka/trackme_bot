@@ -1,14 +1,12 @@
 import { MongoClient } from "mongodb";
 import TelegramBot from "node-telegram-bot-api";
 import { addUser } from "./database/addUser";
-import checkTracks from "./util/checkTracks";
-import { addTracks } from "./database/addTracks";
-import { refreshTrackState } from "./database/refreshTrackState";
-import { User } from "./models/User";
-import { createMessageFromTrack } from "./util/createMessageFromTrack";
+import { refreshAllTracksStates } from "./bot/refreshAllTracksStates";
+import { handleIncomingTracks } from "./bot/handleIncomingTracks";
+import { handleUser } from "./bot/handleUser";
 require("dotenv").config();
 
-const track_refresh_interval = process.env.TRACK_REFRESH_INTERVAL
+const track_refresh_interval = process.env.TRACK_REFRESH_INTERVAL;
 
 const db = {
   url: process.env.MONGODB_URL,
@@ -44,63 +42,17 @@ db_client.connect().then((db_con) => {
     async (msg) =>
       await bot.sendMessage(msg.chat.id, "Выберите опцию", send_opts)
   );
+
   bot.onText(/^\/start$/, async (msg) => {
-    const chat_id = msg.chat.id;
-    const user_id = msg.from?.id;
-
-    if (user_id === undefined) return 1;
-
-    try {
-      await addUser(db_con, user_id, chat_id);
-      console.log("Added user with ID: " + user_id);
-    } catch (err) {
-      console.log(err);
-    }
-
-    await bot.sendMessage(chat_id, "Выберите опцию", send_opts);
+    handleUser(msg, db_con, bot, send_opts);
   });
 
   bot.onText(track_regex, async (msg, match) => {
-    const chat_id = msg.chat.id;
-    const user_id = msg.from?.id;
-
-    if (user_id === undefined || match === null) return 1;
-    try {
-      const checked_tracks = await checkTracks(
-        match.input.split("\n"),
-        track_regex,
-        user_id,
-        db_con
-      );
-
-      addTracks(checked_tracks.valid, user_id, db_con).then(() =>
-        console.log(`Added ${checked_tracks.valid.length} for user ${user_id}`)
-      );
-
-      const message = [
-        ...checked_tracks.valid.map((track) => `[+] Трек ${track} принят`),
-        ...checked_tracks.invalid.map((track) => `[-] Трек ${track} неккоректен`),
-        ...checked_tracks.already_exist.map(
-          (track) => `[!] Трек ${track} уже добавлен`
-        ),
-      ].join("\n");
-
-      await bot.sendMessage(chat_id, message, send_opts);
-  } catch (err) {}
+    if (!match) return;
+    handleIncomingTracks(db_con, bot, send_opts, msg, match, track_regex);
   });
 
   setInterval(() => {
-    db_con
-      .db()
-      .collection<User>("users")
-      .find({})
-      .forEach((user) => {
-        refreshTrackState(db_con, user.id).then((refreshed_tracks) => {
-          if (refreshed_tracks.length === 0) return undefined
-          const messages = refreshed_tracks.map((track) => createMessageFromTrack(track));
-          bot.sendMessage(user.chat_id, messages.join("\n"), send_opts)
-        });
-      });
-    console.log("[#] Refreshed")
+    refreshAllTracksStates(db_con, bot);
   }, parseInt(track_refresh_interval || "10000"));
 });
