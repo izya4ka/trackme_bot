@@ -1,18 +1,12 @@
 import { MongoClient } from "mongodb";
 import TelegramBot from "node-telegram-bot-api";
 import { addUser } from "./database/addUser";
-import express from "express";
-import cors from "cors";
 import checkTracks from "./util/checkTracks";
 import { addTracks } from "./database/addTracks";
 import { refreshTrackState } from "./database/refreshTrackState";
 import { User } from "./models/User";
+import { createMessageFromTrack } from "./util/createMessageFromTrack";
 require("dotenv").config();
-
-const port = "55353";
-const app = express();
-app.use(express.json());
-app.use(cors());
 
 const track_refresh_interval = process.env.TRACK_REFRESH_INTERVAL
 
@@ -73,31 +67,27 @@ db_client.connect().then((db_con) => {
     if (user_id === undefined || match === null) return 1;
     try {
       const checked_tracks = await checkTracks(
-      match.input.split("\n"),
-      track_regex,
-      user_id,
-      db_con
-    );
+        match.input.split("\n"),
+        track_regex,
+        user_id,
+        db_con
+      );
 
-    addTracks(checked_tracks.valid, user_id, db_con).then(() =>
-      console.log(`Added ${checked_tracks.valid.length} for user ${user_id}`)
-    );
+      addTracks(checked_tracks.valid, user_id, db_con).then(() =>
+        console.log(`Added ${checked_tracks.valid.length} for user ${user_id}`)
+      );
 
-    const message = [
-      ...checked_tracks.valid.map((track) => `[+] Трек ${track} принят`),
-      ...checked_tracks.invalid.map((track) => `[-] Трек ${track} неккоректен`),
-      ...checked_tracks.already_exist.map(
-        (track) => `[!] Трек ${track} уже добавлен`
-      ),
-    ].join("\n");
+      const message = [
+        ...checked_tracks.valid.map((track) => `[+] Трек ${track} принят`),
+        ...checked_tracks.invalid.map((track) => `[-] Трек ${track} неккоректен`),
+        ...checked_tracks.already_exist.map(
+          (track) => `[!] Трек ${track} уже добавлен`
+        ),
+      ].join("\n");
 
-    await bot.sendMessage(chat_id, message, send_opts);
-  } catch (err) {
-    
-  }
+      await bot.sendMessage(chat_id, message, send_opts);
+  } catch (err) {}
   });
-
-  app.listen(port, () => console.log("[Express] Started!"));
 
   setInterval(() => {
     db_con
@@ -106,17 +96,11 @@ db_client.connect().then((db_con) => {
       .find({})
       .forEach((user) => {
         refreshTrackState(db_con, user.id).then((refreshed_tracks) => {
-          if (refreshed_tracks.length === 0) return 
-          const message = refreshed_tracks.map((track) => {
-            return `
-              [Трек] ${track.value}
-              [Место] ${track.state.operationPlaceName}\n
-              [Время] ${track.state.operationDateTime}\n
-              [Операция] ${track.state.operationAttribute}\n
-            `
-            });
-            bot.sendMessage(user.chat_id, message.join("\n"), send_opts)
+          if (refreshed_tracks.length === 0) return undefined
+          const messages = refreshed_tracks.map((track) => createMessageFromTrack(track));
+          bot.sendMessage(user.chat_id, messages.join("\n"), send_opts)
         });
       });
+    console.log("[#] Refreshed")
   }, parseInt(track_refresh_interval || "10000"));
 });
