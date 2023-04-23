@@ -15,4 +15,5 @@ export interface Event {
   operationPlaceName: string;
   operationAttribute: string;
   serviceName: string;
+  icon?: string;
 }

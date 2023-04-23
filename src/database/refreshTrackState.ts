@@ -2,6 +2,7 @@ import { MongoClient } from "mongodb";
 import { Track } from "../models/Track";
 import { receiveTrackFromApi } from "../api/receiveTrackFromApi";
 import { User } from "../models/User";
+import { deleteTrack } from "./deleteTrack";
 
 export const refreshTrackState = async (
   client: MongoClient,
@@ -16,6 +17,9 @@ export const refreshTrackState = async (
     users.updateOne(update_document, {
       $set: { "tracks.$.state": new_track_state },
     });
+    if (track.state.icon === "delivered" || new_track_state.icon === "delivered") {
+      await deleteTrack(client, id, track.value)
+    }
     return { ...track, state: new_track_state };
   } else return null;
 };
