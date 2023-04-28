@@ -15,13 +15,17 @@ export const refreshAllTracksStates = async (
     .forEach((user) => {
       if (user.tracks === undefined) return;
       user.tracks.forEach(async (track) => {
-        const new_track = await refreshTrackState(client, track, user.id);
-        if (new_track) {
-          await bot.sendMessage(
-            user.chat_id,
-            createMessageFromTrack(new_track)
-          );
-        }
+        setTimeout(async () => {
+          console.log(`[#] Refreshed for user ${user.id}`)
+          const new_track = await refreshTrackState(client, track, user.id)
+          if (new_track) {
+            console.log(`[#] New track state for user ${user.id}`)
+            await bot.sendMessage(
+              user.chat_id,
+              createMessageFromTrack(new_track)
+            );
+          }
+        }, 2000)
       });
     });
   console.log("[#] Refreshed");
