@@ -8,13 +8,14 @@ export const refreshAllTracksStates = async (
   client: MongoClient,
   bot: TelegramBot
 ) => {
+  let timer = 1000
   client
     .db()
     .collection<User>("users")
     .find({})
     .forEach((user) => {
       if (user.tracks === undefined) return;
-      user.tracks.forEach(async (track) => {
+      user.tracks.forEach((track) => {
         setTimeout(async () => {
           console.log(`[#] Refreshed for user ${user.id}`)
           const new_track = await refreshTrackState(client, track, user.id)
@@ -25,8 +26,8 @@ export const refreshAllTracksStates = async (
               createMessageFromTrack(new_track)
             );
           }
-        }, 2000)
+        }, timer)
+      timer += 2000;
       });
     });
-  console.log("[#] Refreshed");
 };
